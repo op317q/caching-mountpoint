@@ -1,8 +1,5 @@
 package org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.caching.mountpoint.impl.rev141210;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import javax.annotation.Nullable;
 
 import org.opendaylight.controller.md.sal.common.api.TransactionStatus;
@@ -81,6 +78,12 @@ public class CachedDOMTransaction implements DOMDataReadWriteTransaction,DOMData
     	DOMStoreReadTransaction tr=null;
     	try {
 
+    		LOG.info("Empty="+yangInstanceIdentifier.equals(YangInstanceIdentifier.EMPTY));
+
+    		boolean isCachAvailabe=pool.isCacheAvailabe(yangInstanceIdentifier, logicalDatastoreType);
+
+    		LOG.info("isCachAvailabe={}",isCachAvailabe );
+
     		dbStore = pool.getInMemoryDOMDataStore(yangInstanceIdentifier, schemaContext, logicalDatastoreType);
 
     		tr= dbStore.newReadOnlyTransaction();
@@ -89,20 +92,30 @@ public class CachedDOMTransaction implements DOMDataReadWriteTransaction,DOMData
 
     		LOG.info("data from the InMemoryDOMDataStore={}",dataFromMemory);
 
-    		if(dataFromMemory==null){
+    		if(!isCachAvailabe){
     			final DOMDataReadOnlyTransaction domDataReadOnlyTransaction = domDataBroker.newReadOnlyTransaction();
 
 
-    			final CheckedFuture<Optional<NormalizedNode<?, ?>>, ReadFailedException> cfgDataFuture = domDataReadOnlyTransaction
-    					.read(logicalDatastoreType, yangInstanceIdentifier);
+    			final CheckedFuture<Optional<NormalizedNode<?, ?>>, ReadFailedException> cfgDataFuture = domDataReadOnlyTransaction.read(logicalDatastoreType, yangInstanceIdentifier);
+
+    			LOG.info("cfgDataFuture ={}",cfgDataFuture);
 
     			Futures.addCallback(cfgDataFuture, new FutureCallback<Optional<NormalizedNode<?, ?>>>() {
 
     				@Override public void onSuccess(final Optional<NormalizedNode<?, ?>> result) {
     					if(result.isPresent()) {
+
+    					
     						//     			                    LOG.
     						final NormalizedNode<?, ?> normalizedNode = result.get();
+    						//LOG.info("normalizedNode ={}",normalizedNode);
+    						LOG.info("Identifier :=",normalizedNode.getIdentifier());
+    						LOG.info("Node tyep :={}",normalizedNode.getNodeType());
+    						LOG.info("Node Value :={}",normalizedNode.getValue());
+    						
     						final DOMStoreWriteTransaction tx = dbStore.newWriteOnlyTransaction();
+    						
+    						
     						tx.write(yangInstanceIdentifier, normalizedNode);
     						tx.close();
     						LOG.info("added data in the newReadOnlyTransaction  to the InMemoryDOMDataStore for id={}",yangInstanceIdentifier);
@@ -258,3 +271,6 @@ public class CachedDOMTransaction implements DOMDataReadWriteTransaction,DOMData
 	}
 
 }
+
+
+

@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class InMemoryDeviceDOMDataStorePool {
-	
+
 	private static final Logger LOG = LoggerFactory.getLogger(InMemoryDeviceDOMDataStorePool.class);
 
 	public static final int noOfDevice = 5;
@@ -37,7 +37,7 @@ public class InMemoryDeviceDOMDataStorePool {
 
 	public InMemoryDOMDataStore getInMemoryDOMDataStore(YangInstanceIdentifier piddd,SchemaContext schemaContext, final LogicalDatastoreType store) throws Exception {
 
-		InMemoryDOMDataStore inMemoryDOMDataStore = this.pool.get(piddd);
+		InMemoryDOMDataStore inMemoryDOMDataStore = this.pool.get(createKey(piddd, store));
 		if (inMemoryDOMDataStore != null) {
 			LOG.info("Get datasource from memory for device="+piddd.toString());
 			for (YangInstanceIdentifier pid : this.lruCache.keySet()) {
@@ -66,6 +66,12 @@ public class InMemoryDeviceDOMDataStorePool {
 		}
 	}
 
+	public boolean isCacheAvailabe(YangInstanceIdentifier piddd,final LogicalDatastoreType store){
+
+		if(this.pool.get(createKey(piddd, store))==null) return false;
+		return true;
+	}
+
 	private synchronized void evictInMemoryDOMDataStore() throws Exception {
 		YangInstanceIdentifier temppid = null;
 		int tempmax = 1;
@@ -88,6 +94,20 @@ public class InMemoryDeviceDOMDataStorePool {
 		}
 	}
 
+	private String createKey(YangInstanceIdentifier pid, final LogicalDatastoreType store){
+
+		switch (store) {
+		case CONFIGURATION: {
+			return pid.toString() + "-DOM-OPER";
+		}
+		case OPERATIONAL: {
+			return pid.toString() + "-DOM-CFG";
+		}
+		}
+	return null;
+
+	}
+
 	private InMemoryDOMDataStore initCache(YangInstanceIdentifier pid, SchemaService schemaService, final LogicalDatastoreType store) {
 
 		switch (store) {
@@ -104,7 +124,7 @@ public class InMemoryDeviceDOMDataStorePool {
 		return null;
 
 	}
-	
+
 	 private SchemaService createSchemaService(final SchemaContext schemaContext) {
 	        return new SchemaService() {
 
