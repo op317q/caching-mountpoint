@@ -109,7 +109,7 @@ public class CachedDOMTransaction implements DOMDataReadWriteTransaction,DOMData
     						//     			                    LOG.
     						final NormalizedNode<?, ?> normalizedNode = result.get();
     						//LOG.info("normalizedNode ={}",normalizedNode);
-    						LOG.info("Identifier :=",normalizedNode.getIdentifier());
+    						LOG.info("Identifier :={}",normalizedNode.getIdentifier());
     						LOG.info("Node tyep :={}",normalizedNode.getNodeType());
     						LOG.info("Node Value :={}",normalizedNode.getValue());
     						
